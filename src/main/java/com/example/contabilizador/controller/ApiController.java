@@ -64,6 +64,9 @@ public class ApiController {
         return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante, cargadoPorId);
     }
 
+    @GetMapping("/partidos")
+    public List<Partido> listarPartidos() { return partidoRepository.findAll(); }
+
     @PostMapping("/partidos/{partidoId}/reclamar-gol")
     public Gol reclamarGol(@PathVariable Long partidoId,
                            @RequestParam Long usuarioId,
@@ -84,4 +87,3 @@ public class ApiController {
     @GetMapping("/usuarios/{usuarioId}/resumen")
     public Map<String, Object> resumen(@PathVariable Long usuarioId) { return resumenService.resumenUsuario(usuarioId); }
 }
-
