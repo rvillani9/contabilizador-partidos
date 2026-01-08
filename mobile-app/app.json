@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Contabilizador Partidos",
+    "slug": "contabilizador-mobile",
+    "scheme": "contabilizador",
+    "sdkVersion": "51.0.0",
+    "platforms": ["android", "ios"],
+    "extra": {
+      "API_BASE": "http://192.168.0.10:8080/api"
+    }
+  }
+}
+
