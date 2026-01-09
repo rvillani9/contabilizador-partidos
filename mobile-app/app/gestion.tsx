@@ -56,6 +56,10 @@ export default function Gestion() {
   const [numero, setNumero] = useState('');
   const [showEquiposReclamar, setShowEquiposReclamar] = useState(false);
 
+  // Resultados de búsqueda en tiempo real
+  const [resultadosLocal, setResultadosLocal] = useState<Equipo[]>([]);
+  const [resultadosVisitante, setResultadosVisitante] = useState<Equipo[]>([]);
+
   useEffect(() => {
     cargarTorneos();
     cargarEquipos();
@@ -260,8 +264,15 @@ export default function Gestion() {
             if (text.length >= 2) {
               const equipos = await buscarEquipos(text);
               if (equipos.length > 0) {
+                setResultadosLocal(equipos);
                 setShowEquiposLocal(true);
+              } else {
+                setResultadosLocal([]);
+                setShowEquiposLocal(false);
               }
+            } else {
+              setResultadosLocal([]);
+              setShowEquiposLocal(false);
             }
           }}
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
@@ -269,17 +280,15 @@ export default function Gestion() {
         />
         {showEquiposLocal && equipoLocalNombre.length >= 2 && (
           <View style={[styles.dropdown, { backgroundColor: colors.bgSecondary }]}>
-            {equiposDisponibles
-              .filter(e => e.nombre.toLowerCase().includes(equipoLocalNombre.toLowerCase()))
-              .map(e => (
-                <TouchableOpacity
-                  key={e.id}
-                  style={styles.dropdownItem}
-                  onPress={() => { setEquipoLocalNombre(e.nombre); setEquipoLocalId(String(e.id)); setShowEquiposLocal(false); }}
-                >
-                  <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
-                </TouchableOpacity>
-              ))}
+            {resultadosLocal.map(e => (
+              <TouchableOpacity
+                key={e.id}
+                style={styles.dropdownItem}
+                onPress={() => { setEquipoLocalNombre(e.nombre); setEquipoLocalId(String(e.id)); setShowEquiposLocal(false); }}
+              >
+                <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -292,8 +301,15 @@ export default function Gestion() {
             if (text.length >= 2) {
               const equipos = await buscarEquipos(text);
               if (equipos.length > 0) {
+                setResultadosVisitante(equipos);
                 setShowEquiposVisitante(true);
+              } else {
+                setResultadosVisitante([]);
+                setShowEquiposVisitante(false);
               }
+            } else {
+              setResultadosVisitante([]);
+              setShowEquiposVisitante(false);
             }
           }}
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
@@ -301,17 +317,15 @@ export default function Gestion() {
         />
         {showEquiposVisitante && equipoVisitanteNombre.length >= 2 && (
           <View style={[styles.dropdown, { backgroundColor: colors.bgSecondary }]}>
-            {equiposDisponibles
-              .filter(e => e.nombre.toLowerCase().includes(equipoVisitanteNombre.toLowerCase()))
-              .map(e => (
-                <TouchableOpacity
-                  key={e.id}
-                  style={styles.dropdownItem}
-                  onPress={() => { setEquipoVisitanteNombre(e.nombre); setEquipoVisitanteId(String(e.id)); setShowEquiposVisitante(false); }}
-                >
-                  <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
-                </TouchableOpacity>
-              ))}
+            {resultadosVisitante.map(e => (
+              <TouchableOpacity
+                key={e.id}
+                style={styles.dropdownItem}
+                onPress={() => { setEquipoVisitanteNombre(e.nombre); setEquipoVisitanteId(String(e.id)); setShowEquiposVisitante(false); }}
+              >
+                <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -331,7 +345,7 @@ export default function Gestion() {
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
         />
-        <Button title="Crear Partido" onPress={crearPartido} color={colors.buttonBg} />
+        <Button title="Crear Partido" onPress={crearPartido} color={colors.buttonBg} disabled={!equipoLocalId || !equipoVisitanteId || !torneoSeleccionado} />
 
         <Text style={[styles.sectionTitle, { color: colors.headerBg }]}>Reclamar Gol</Text>
         <TextInput
