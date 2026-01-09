@@ -20,8 +20,8 @@ public class Partido {
 
     @ManyToOne(optional = false)
     private Equipo equipoLocal;
-    @ManyToOne(optional = false)
-    private Equipo equipoVisitante;
+    @ManyToOne(optional = true)
+    private Equipo equipoVisitante; // ahora opcional
 
     private Integer golesLocal;
     private Integer golesVisitante;
@@ -34,4 +34,3 @@ public class Partido {
     @OneToMany(mappedBy = "partido", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Gol> golesReclamados = new HashSet<>();
 }
-

@@ -60,7 +60,7 @@ public class ApiController {
     @PostMapping("/partidos")
     public Partido crearPartido(@RequestParam Long torneoId,
                                 @RequestParam Long localId,
-                                @RequestParam Long visitanteId,
+                                @RequestParam(required = false) Long visitanteId,
                                 @RequestParam int golesLocal,
                                 @RequestParam int golesVisitante,
                                 @RequestParam Long cargadoPorId) {
@@ -76,6 +76,14 @@ public class ApiController {
                            @RequestParam Long equipoId,
                            @RequestParam(required = false) Integer numero) {
         return partidoService.reclamarGol(partidoId, usuarioId, equipoId, numero);
+    }
+
+    @PostMapping("/partidos/{partidoId}/reclamar-goles")
+    public List<Gol> reclamarGoles(@PathVariable("partidoId") Long partidoId,
+                                   @RequestParam Long usuarioId,
+                                   @RequestParam Long equipoId,
+                                   @RequestParam Integer cantidad) {
+        return partidoService.reclamarGolMultiple(partidoId, usuarioId, equipoId, cantidad);
     }
 
     // Pertenencias y resumen

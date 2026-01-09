@@ -55,6 +55,7 @@ export default function Gestion() {
   const [equipoReclamerId, setEquipoReclamerId] = useState('');
   const [numero, setNumero] = useState('');
   const [showEquiposReclamar, setShowEquiposReclamar] = useState(false);
+  const [cantidadGoles, setCantidadGoles] = useState('');
 
   // Resultados de búsqueda en tiempo real
   const [resultadosLocal, setResultadosLocal] = useState<Equipo[]>([]);
@@ -115,24 +116,32 @@ export default function Gestion() {
       showAlert('Error', 'Ingresa la instancia (ej: Fecha 1, Final)');
       return;
     }
-    if (!equipoLocalId || !equipoVisitanteId) {
-      showAlert('Error', 'Selecciona ambos equipos');
+    if (!equipoLocalId) {
+      showAlert('Error', 'Selecciona equipo local');
       return;
     }
-    if (equipoLocalId === equipoVisitanteId) {
+    if (equipoVisitanteId && equipoLocalId === equipoVisitanteId) {
       showAlert('Error', 'Los equipos deben ser diferentes');
       return;
     }
 
     try {
-      const url = `${base}/partidos?torneoId=${torneoSeleccionado.id}&localId=${equipoLocalId}&visitanteId=${equipoVisitanteId}&golesLocal=${golesLocal}&golesVisitante=${golesVisitante}&cargadoPorId=${usuarioId}`;
+      const params = new URLSearchParams({
+        torneoId: String(torneoSeleccionado.id),
+        localId: equipoLocalId,
+        golesLocal,
+        golesVisitante,
+        cargadoPorId: String(usuarioId)
+      });
+      if (equipoVisitanteId) params.append('visitanteId', equipoVisitanteId);
+      const url = `${base}/partidos?${params.toString()}`;
       const response = await fetch(url, { method: 'POST' });
       const text = await response.text();
       if (!response.ok) {
         throw new Error(text || `HTTP ${response.status}`);
       }
       const data = text ? JSON.parse(text) : {};
-      showAlert('Éxito', `Partido creado con ID ${data.id}`);
+      showAlert('Éxito', `Partido #${data.id} creado`);
       setPartidoId(String(data.id));
       // Limpiar
       setInstancia('');
@@ -154,17 +163,25 @@ export default function Gestion() {
       return;
     }
     try {
-      const url = `${base}/partidos/${partidoId}/reclamar-gol?usuarioId=${usuarioId}&equipoId=${equipoReclamerId}&numero=${numero}`;
-      const response = await fetch(url, { method: 'POST' });
-      const text = await response.text();
-      if (!response.ok) {
-        throw new Error(text || `HTTP ${response.status}`);
+      const cantidad = parseInt(cantidadGoles || '1', 10);
+      if (cantidad > 1) {
+        const url = `${base}/partidos/${partidoId}/reclamar-goles?usuarioId=${usuarioId}&equipoId=${equipoReclamerId}&cantidad=${cantidad}`;
+        const response = await fetch(url, { method: 'POST' });
+        const text = await response.text();
+        if (!response.ok) throw new Error(text || `HTTP ${response.status}`);
+        showAlert('Éxito', `Se registraron ${cantidad} goles`);
+      } else {
+        const url = `${base}/partidos/${partidoId}/reclamar-gol?usuarioId=${usuarioId}&equipoId=${equipoReclamerId}&numero=${numero}`;
+        const response = await fetch(url, { method: 'POST' });
+        const text = await response.text();
+        if (!response.ok) throw new Error(text || `HTTP ${response.status}`);
+        showAlert('Éxito', 'Gol reclamado');
       }
-      showAlert('Éxito', 'Gol reclamado');
       setPartidoId('');
       setEquipoReclamarNombre('');
       setEquipoReclamerId('');
       setNumero('');
+      setCantidadGoles('');
     } catch (e: any) {
       showAlert('Error', e.message || String(e));
     }
@@ -390,7 +407,7 @@ export default function Gestion() {
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
         />
-        <Button title="Crear Partido" onPress={crearPartido} color={colors.buttonBg} disabled={!equipoLocalId || !equipoVisitanteId || !torneoSeleccionado} />
+        <Button title="Crear Partido" onPress={crearPartido} color={colors.buttonBg} disabled={!equipoLocalId || !torneoSeleccionado} />
 
         <Text style={[styles.sectionTitle, { color: colors.headerBg }]}>Reclamar Gol</Text>
         <TextInput
@@ -439,7 +456,15 @@ export default function Gestion() {
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
         />
-        <Button title="Reclamar Gol" onPress={reclamarGol} color={colors.buttonBgSecondary} />
+        <TextInput
+          placeholder="Cantidad de goles (para reclamar múltiples)"
+          value={cantidadGoles}
+          onChangeText={setCantidadGoles}
+          keyboardType="numeric"
+          style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
+          placeholderTextColor={colors.inputPlaceholder}
+        />
+        <Button title="Reclamar Gol(es)" onPress={reclamarGol} color={colors.buttonBgSecondary} />
       </View>
     </ScrollView>
   );

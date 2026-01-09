@@ -121,7 +121,7 @@ export default function Partidos() {
                 renderItem={({item}) => (
                     <View style={[styles.card, { backgroundColor: colors.bgSecondary, borderColor: colors.inputBorder }]}>
                         <Text style={[styles.cardText, { color: colors.textPrimary }]}>
-                            {item.equipoLocal?.nombre} <Text style={{color: colors.headerBg}}>{item.golesLocal}</Text> — <Text style={{color: colors.headerBg}}>{item.golesVisitante}</Text> {item.equipoVisitante?.nombre}
+                            #{item.id} — {item.equipoLocal?.nombre} <Text style={{color: colors.headerBg}}>{item.golesLocal}</Text> — <Text style={{color: colors.headerBg}}>{item.golesVisitante}</Text> {item.equipoVisitante?.nombre ?? '(sin visitante)'}
                         </Text>
                         <Text style={[styles.instancia, { color: colors.textSecondary }]}>
                             Instancia: {item.instancia || 'Fase de Grupos'}
