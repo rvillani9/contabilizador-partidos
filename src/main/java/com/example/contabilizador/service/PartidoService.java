@@ -27,11 +27,10 @@ public class PartidoService {
 
     @Transactional
     public Partido crearPartido(Long torneoId, Long localId, Long visitanteId, Date fecha, int golesLocal,
-                                int golesVisitante, Long cargadoPorId) {
+                                int golesVisitante) {
         Torneo torneo = torneoRepository.findById(torneoId).orElseThrow();
         Equipo local = equipoRepository.findById(localId).orElseThrow();
         Equipo visitante = equipoRepository.findById(visitanteId).orElseThrow();
-        Usuario cargadoPor = usuarioRepository.findById(cargadoPorId).orElseThrow();
         Partido p = Partido.builder()
                 .torneo(torneo)
                 .equipoLocal(local)
@@ -39,7 +38,6 @@ public class PartidoService {
                 .fecha(fecha.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate())
                 .golesLocal(golesLocal)
                 .golesVisitante(golesVisitante)
-                .cargadoPor(cargadoPor)
                 .build();
         return partidoRepository.save(p);
     }
