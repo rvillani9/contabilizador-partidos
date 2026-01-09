@@ -1,22 +1,15 @@
 import { Platform } from 'react-native';
 
 export function getApiBase(): string {
-  // 1) Si definiste la variable en un archivo .env, tiene prioridad total
-  const fromEnv = process.env.EXPO_PUBLIC_API_BASE;
-  if (fromEnv) return fromEnv.replace(/\/$/, '');
-
-  // 2) DETECCIÓN DE PRODUCCIÓN: Si la app no está en modo desarrollo (Build final)
-  // O si simplemente quieres que el celular físico ya use el backend de la nube
-  if (!__DEV__) {
-    return 'https://contador-futbolero.onrender.com/api';
+  // Si estamos en un navegador (Web)
+  if (Platform.OS === 'web') {
+    // Si la URL del navegador NO contiene "localhost", estamos en producción
+    if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+      return '/api'; // Usa la URL relativa de Render
+    }
   }
 
-  // 3) DESARROLLO LOCAL: Fallbacks por plataforma
-  // Si estás probando en emulador, usa estas IPs
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8080/api'; // IP especial para emulador Android
-  }
-
-  // Para iOS Simulator o Expo Web corriendo en tu PC
+  // Si no es web o es localhost, usamos los fallbacks de desarrollo
+  if (Platform.OS === 'android') return 'http://10.0.2.2:8080/api';
   return 'http://localhost:8080/api';
 }
