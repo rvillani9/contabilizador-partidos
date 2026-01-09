@@ -9,15 +9,12 @@ COPY src ./src
 # Compilamos el proyecto
 RUN mvn clean package -DskipTests
 
-# Etapa 2: Ejecutar la aplicación (JRE Java 21)
+# Etapa 2: Ejecutar la aplicación
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Copiamos el JAR desde la etapa anterior
-COPY --from=build /app/target/*.jar app.jar
+# Cambiamos el *.jar por app.jar (que definimos en el pom.xml)
+COPY --from=build /app/target/app.jar app.jar
 
-# Exponemos el puerto 8080 para Render
 EXPOSE 8080
-
-# Comando para iniciar la aplicación
 ENTRYPOINT ["java", "-jar", "app.jar"]
