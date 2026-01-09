@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, Alert, FlatList, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, Alert, FlatList, TouchableOpacity, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getApiBase } from './lib/apiBase';
 import { useTheme } from './lib/ThemeContext';
@@ -59,6 +59,7 @@ export default function Gestion() {
   // Resultados de búsqueda en tiempo real
   const [resultadosLocal, setResultadosLocal] = useState<Equipo[]>([]);
   const [resultadosVisitante, setResultadosVisitante] = useState<Equipo[]>([]);
+  const [creandoLocal, setCreandoLocal] = useState(false);
 
   useEffect(() => {
     cargarTorneos();
@@ -179,6 +180,17 @@ export default function Gestion() {
     }
   }
 
+  async function crearEquipo(nombre: string): Promise<Equipo> {
+    const resp = await fetch(`${base}/equipos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre })
+    });
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+    return text ? JSON.parse(text) : {};
+  }
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.bgPrimary }]}>
       <View style={[styles.header, { backgroundColor: colors.headerBg }]}>
@@ -268,12 +280,14 @@ export default function Gestion() {
                 setShowEquiposLocal(true);
               } else {
                 setResultadosLocal([]);
-                setShowEquiposLocal(false);
+                setShowEquiposLocal(true); // mostramos opción de crear
               }
             } else {
               setResultadosLocal([]);
               setShowEquiposLocal(false);
             }
+            // Al cambiar el texto, limpiamos el ID seleccionado si el nombre ya no coincide
+            setEquipoLocalId('');
           }}
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
@@ -289,12 +303,42 @@ export default function Gestion() {
                 <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
               </TouchableOpacity>
             ))}
+            {/* Opción para crear si no hay resultados exactos */}
+            <TouchableOpacity
+              disabled={creandoLocal}
+              style={[styles.dropdownItem, { opacity: creandoLocal ? 0.6 : 1 }]}
+              onPress={async () => {
+                try {
+                  setCreandoLocal(true);
+                  const nuevo = await crearEquipo(equipoLocalNombre.trim());
+                  setEquipoLocalNombre(nuevo.nombre);
+                  setEquipoLocalId(String(nuevo.id));
+                  setShowEquiposLocal(false);
+                } catch (e: any) {
+                  showAlert('Error', e.message || String(e));
+                } finally {
+                  setCreandoLocal(false);
+                }
+              }}
+            >
+              {creandoLocal ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                  <Text style={{ color: colors.textPrimary, marginLeft: 8 }}>Creando…</Text>
+                </View>
+              ) : (
+                <Text style={{ color: colors.textPrimary }}>
+                  Crear "{equipoLocalNombre.trim()}" como equipo local
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
         )}
 
+        {/* Equipo Visitante: solo selección de existentes, sin crear */}
         <Text style={[styles.label, { color: colors.textSecondary }]}>Equipo Visitante</Text>
         <TextInput
-          placeholder="Busca o crea equipo"
+          placeholder="Busca equipo existente"
           value={equipoVisitanteNombre}
           onChangeText={async (text) => {
             setEquipoVisitanteNombre(text);
@@ -311,6 +355,7 @@ export default function Gestion() {
               setResultadosVisitante([]);
               setShowEquiposVisitante(false);
             }
+            setEquipoVisitanteId('');
           }}
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
