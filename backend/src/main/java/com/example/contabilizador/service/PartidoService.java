@@ -29,7 +29,7 @@ public class PartidoService {
 
     @Transactional
     public Partido crearPartido(Long torneoId, Long localId, Long visitanteId, Date fecha, int golesLocal,
-                                int golesVisitante) {
+                                int golesVisitante, Long cargadoPorId) {
         // Validaciones básicas
         if (localId.equals(visitanteId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo local y visitante no pueden ser el mismo");
@@ -44,6 +44,9 @@ public class PartidoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo local no encontrado"));
         Equipo visitante = equipoRepository.findById(visitanteId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo visitante no encontrado"));
+        Usuario cargadoPor = usuarioRepository.findById(cargadoPorId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario (cargadoPor) no encontrado"));
+
         Partido p = Partido.builder()
                 .torneo(torneo)
                 .equipoLocal(local)
@@ -51,6 +54,7 @@ public class PartidoService {
                 .fecha(fecha.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate())
                 .golesLocal(golesLocal)
                 .golesVisitante(golesVisitante)
+                .cargadoPor(cargadoPor)
                 .build();
         return partidoRepository.save(p);
     }

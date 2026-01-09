@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, Alert, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, Alert, FlatList, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getApiBase } from './lib/apiBase';
 import { useTheme } from './lib/ThemeContext';
 import { getColors } from './lib/colors';
+
+function showAlert(title: string, msg?: string) {
+  if (Platform.OS === 'web') {
+    alert(`${title}${msg ? `: ${msg}` : ''}`);
+  } else {
+    Alert.alert(title, msg);
+  }
+}
 
 interface Equipo {
   id: number;
@@ -75,7 +83,7 @@ export default function Gestion() {
 
   async function crearTorneo() {
     if (!nombreTorneo.trim()) {
-      Alert.alert('Error', 'Ingresa el nombre del torneo');
+      showAlert('Error', 'Ingresa el nombre del torneo');
       return;
     }
     try {
@@ -85,41 +93,41 @@ export default function Gestion() {
         body: JSON.stringify({ nombre: nombreTorneo })
       });
       const data = await response.json();
-      Alert.alert('Éxito', `Torneo creado con ID ${data.id}`);
+      showAlert('Éxito', `Torneo creado con ID ${data.id}`);
       setNombreTorneo('');
       await cargarTorneos();
     } catch (e) {
-      Alert.alert('Error', String(e));
+      showAlert('Error', String(e));
     }
   }
 
   async function crearPartido() {
     if (!torneoSeleccionado) {
-      Alert.alert('Error', 'Selecciona un torneo');
+      showAlert('Error', 'Selecciona un torneo');
       return;
     }
     if (!instancia.trim()) {
-      Alert.alert('Error', 'Ingresa la instancia (ej: Fecha 1, Final)');
+      showAlert('Error', 'Ingresa la instancia (ej: Fecha 1, Final)');
       return;
     }
     if (!equipoLocalId || !equipoVisitanteId) {
-      Alert.alert('Error', 'Selecciona ambos equipos');
+      showAlert('Error', 'Selecciona ambos equipos');
       return;
     }
     if (equipoLocalId === equipoVisitanteId) {
-      Alert.alert('Error', 'Los equipos deben ser diferentes');
+      showAlert('Error', 'Los equipos deben ser diferentes');
       return;
     }
 
     try {
-      const url = `${base}/partidos?torneoId=${torneoSeleccionado.id}&localId=${equipoLocalId}&visitanteId=${equipoVisitanteId}&instancia=${encodeURIComponent(instancia)}&golesLocal=${golesLocal}&golesVisitante=${golesVisitante}&cargadoPorId=${usuarioId}`;
-      console.log('URL Crear Partido:', url);
+      const url = `${base}/partidos?torneoId=${torneoSeleccionado.id}&localId=${equipoLocalId}&visitanteId=${equipoVisitanteId}&golesLocal=${golesLocal}&golesVisitante=${golesVisitante}&cargadoPorId=${usuarioId}`;
       const response = await fetch(url, { method: 'POST' });
+      const text = await response.text();
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(text || `HTTP ${response.status}`);
       }
-      const data = await response.json();
-      Alert.alert('Éxito', `Partido creado con ID ${data.id}`);
+      const data = text ? JSON.parse(text) : {};
+      showAlert('Éxito', `Partido creado con ID ${data.id}`);
       setPartidoId(String(data.id));
       // Limpiar
       setInstancia('');
@@ -129,27 +137,31 @@ export default function Gestion() {
       setEquipoVisitanteId('');
       setGolesLocal('0');
       setGolesVisitante('0');
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error crear partido:', e);
-      Alert.alert('Error', String(e));
+      showAlert('Error', e.message || String(e));
     }
   }
 
   async function reclamarGol() {
     if (!partidoId || !equipoReclamerId) {
-      Alert.alert('Error', 'Completa Partido ID y selecciona un equipo');
+      showAlert('Error', 'Completa Partido ID y selecciona un equipo');
       return;
     }
     try {
-      const url = `${base}/partidos/${partidoId}/reclamar-gol?equipoId=${equipoReclamerId}&numero=${numero}`;
-      await fetch(url, { method: 'POST' });
-      Alert.alert('Éxito', 'Gol reclamado');
+      const url = `${base}/partidos/${partidoId}/reclamar-gol?usuarioId=${usuarioId}&equipoId=${equipoReclamerId}&numero=${numero}`;
+      const response = await fetch(url, { method: 'POST' });
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+      showAlert('Éxito', 'Gol reclamado');
       setPartidoId('');
       setEquipoReclamarNombre('');
       setEquipoReclamerId('');
       setNumero('');
-    } catch (e) {
-      Alert.alert('Error', String(e));
+    } catch (e: any) {
+      showAlert('Error', e.message || String(e));
     }
   }
 
@@ -391,4 +403,3 @@ const styles = StyleSheet.create({
   dropdown: { borderWidth: 2, borderRadius: 8, marginBottom: 12, maxHeight: 150 },
   dropdownItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#ddd' },
 });
-
