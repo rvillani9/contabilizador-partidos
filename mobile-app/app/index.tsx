@@ -103,6 +103,9 @@ export default function Home() {
                     <TouchableOpacity onPress={() => { router.push('/partidos'); setMostrarMenu(false); }}>
                         <Text style={styles.menuItem}>Partidos</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
+                        <Text style={styles.menuItem}>Ranking</Text>
+                    </TouchableOpacity>
                 </View>
             )}
 

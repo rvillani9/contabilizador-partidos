@@ -22,13 +22,17 @@ export default function Partidos() {
 
     const [partidos, setPartidos] = useState<any[]>([]);
     const [mostrarMenu, setMostrarMenu] = useState(false);
+    const [equipos, setEquipos] = useState<any[]>([]);
+    const [filtroLocalId, setFiltroLocalId] = useState<string>('');
 
     useEffect(() => {
+        cargarEquipos();
         cargar();
     }, []);
 
     function cargar() {
-        fetch(`${base}/partidos`)
+        const url = filtroLocalId ? `${base}/partidos?localId=${filtroLocalId}` : `${base}/partidos`;
+        fetch(url)
             .then(async r => {
                 const text = await r.text();
                 if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
@@ -36,6 +40,27 @@ export default function Partidos() {
             })
             .then(setPartidos)
             .catch(e => showAlert('Error', e.message || String(e)));
+    }
+
+    function cargarEquipos() {
+        fetch(`${base}/equipos`)
+            .then(async r => {
+                const text = await r.text();
+                if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
+                return text ? JSON.parse(text) : [];
+            })
+            .then(setEquipos)
+            .catch(e => showAlert('Error', e.message || String(e)));
+    }
+
+    function aplicarFiltro(id: string) {
+        setFiltroLocalId(id);
+        setTimeout(cargar, 0);
+    }
+
+    function limpiarFiltro() {
+        setFiltroLocalId('');
+        setTimeout(cargar, 0);
     }
 
     function reclamarGol(partidoId: number) {
@@ -98,20 +123,27 @@ export default function Partidos() {
                 </View>
             </View>
 
-            {/* MENU DROPDOWN */}
-            {mostrarMenu && (
-                <View style={[styles.menu, { backgroundColor: colors.bgSecondary }]}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/'); setMostrarMenu(false); }}>
-                        <Text style={{ color: colors.textPrimary }}>Usuarios</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/equipos'); setMostrarMenu(false); }}>
-                        <Text style={{ color: colors.textPrimary }}>Equipos</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => setMostrarMenu(false)}>
-                        <Text style={{ color: colors.headerBg, fontWeight: 'bold' }}>Partidos</Text>
-                    </TouchableOpacity>
+            {/* FILTRO POR EQUIPO LOCAL */}
+            <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ color: colors.textPrimary, marginRight: 8 }}>Filtrar por local:</Text>
+                <View style={{ flex: 1, borderWidth: 1, borderColor: colors.inputBorder, borderRadius: 8 }}>
+                    <select
+                        value={filtroLocalId}
+                        onChange={(e) => aplicarFiltro((e.target as HTMLSelectElement).value)}
+                        style={{ width: '100%', padding: 8, backgroundColor: 'transparent', color: colors.textPrimary }}
+                    >
+                        <option value="">Todos</option>
+                        {equipos.map((e: any) => (
+                            <option key={e.id} value={e.id}>{e.nombre}</option>
+                        ))}
+                    </select>
                 </View>
-            )}
+                {filtroLocalId ? (
+                    <TouchableOpacity onPress={limpiarFiltro} style={[styles.iconBtn, { backgroundColor: colors.headerBg }]}>
+                        <Text style={{ color: '#fff' }}>Limpiar</Text>
+                    </TouchableOpacity>
+                ) : null}
+            </View>
 
             {/* LISTA */}
             <FlatList
@@ -135,6 +167,24 @@ export default function Partidos() {
                     </View>
                 )}
             />
+
+            {/* MENU DROPDOWN */}
+            {mostrarMenu && (
+                <View style={[styles.menu, { backgroundColor: colors.bgSecondary }]}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/'); setMostrarMenu(false); }}>
+                        <Text style={{ color: colors.textPrimary }}>Usuarios</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/equipos'); setMostrarMenu(false); }}>
+                        <Text style={{ color: colors.textPrimary }}>Equipos</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => setMostrarMenu(false)}>
+                        <Text style={{ color: colors.headerBg, fontWeight: 'bold' }}>Partidos</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
+                        <Text style={{ color: colors.textPrimary }}>Ranking</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 }

@@ -5,7 +5,6 @@ import com.example.contabilizador.repository.*;
 import com.example.contabilizador.service.PartidoService;
 import com.example.contabilizador.service.ResumenService;
 import com.example.contabilizador.service.UsuarioEquipoService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,18 +20,21 @@ public class ApiController {
     private final EquipoRepository equipoRepository;
     private final TorneoRepository torneoRepository;
     private final PartidoRepository partidoRepository;
+    private final GolRepository golRepository;
     private final PartidoService partidoService;
     private final UsuarioEquipoService usuarioEquipoService;
     private final ResumenService resumenService;
 
     public ApiController(UsuarioRepository usuarioRepository, EquipoRepository equipoRepository,
                          TorneoRepository torneoRepository, PartidoRepository partidoRepository,
+                         GolRepository golRepository,
                          PartidoService partidoService, UsuarioEquipoService usuarioEquipoService,
                          ResumenService resumenService) {
         this.usuarioRepository = usuarioRepository;
         this.equipoRepository = equipoRepository;
         this.torneoRepository = torneoRepository;
         this.partidoRepository = partidoRepository;
+        this.golRepository = golRepository;
         this.partidoService = partidoService;
         this.usuarioEquipoService = usuarioEquipoService;
         this.resumenService = resumenService;
@@ -62,14 +64,20 @@ public class ApiController {
                                 @RequestParam Long localId,
                                 @RequestParam(required = false) Long visitanteId,
                                 @RequestParam(required = false) String visitanteNombre,
+                                @RequestParam String instancia,
                                 @RequestParam int golesLocal,
                                 @RequestParam int golesVisitante,
                                 @RequestParam Long cargadoPorId) {
-        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante, cargadoPorId, visitanteNombre);
+        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante, cargadoPorId, visitanteNombre, instancia);
     }
 
     @GetMapping("/partidos")
-    public List<Partido> listarPartidos() { return partidoRepository.findAll(); }
+    public List<Partido> listarPartidos(@RequestParam(required = false) Long localId) {
+        if (localId != null) {
+            return partidoRepository.findByEquipoLocal_Id(localId);
+        }
+        return partidoRepository.findAll();
+    }
 
     @PostMapping("/partidos/{partidoId}/reclamar-gol")
     public Gol reclamarGol(@PathVariable("partidoId") Long partidoId,
@@ -98,4 +106,41 @@ public class ApiController {
 
     @GetMapping("/usuarios/{usuarioId}/resumen")
     public Map<String, Object> resumen(@PathVariable("usuarioId") Long usuarioId) { return resumenService.resumenUsuario(usuarioId); }
+
+    @GetMapping("/ranking-usuarios")
+    public List<Map<String, Object>> rankingUsuarios(@RequestParam(defaultValue = "goles") String ordenarPor) {
+        List<Usuario> usuarios = usuarioRepository.findAll();
+        Map<Long, String> nombres = new java.util.HashMap<>();
+        for (Usuario u : usuarios) nombres.put(u.getId(), u.getNombre());
+
+        List<Object[]> goles = golRepository.rankingGoles();
+        List<Object[]> partidos = golRepository.rankingPartidosJugados();
+
+        java.util.Map<Long, Long> mapGoles = new java.util.HashMap<>();
+        for (Object[] row : goles) mapGoles.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        java.util.Map<Long, Long> mapPartidos = new java.util.HashMap<>();
+        for (Object[] row : partidos) mapPartidos.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+
+        java.util.Set<Long> ids = new java.util.HashSet<>();
+        ids.addAll(mapGoles.keySet());
+        ids.addAll(mapPartidos.keySet());
+
+        java.util.List<Map<String, Object>> out = new java.util.ArrayList<>();
+        for (Long id : ids) {
+            java.util.Map<String, Object> m = new java.util.HashMap<>();
+            m.put("usuarioId", id);
+            m.put("nombre", nombres.getOrDefault(id, "(desconocido)"));
+            m.put("goles", mapGoles.getOrDefault(id, 0L));
+            m.put("partidos", mapPartidos.getOrDefault(id, 0L));
+            out.add(m);
+        }
+
+        out.sort((a,b) -> {
+            if ("partidos".equalsIgnoreCase(ordenarPor)) {
+                return Long.compare(((Number)b.get("partidos")).longValue(), ((Number)a.get("partidos")).longValue());
+            }
+            return Long.compare(((Number)b.get("goles")).longValue(), ((Number)a.get("goles")).longValue());
+        });
+        return out;
+    }
 }

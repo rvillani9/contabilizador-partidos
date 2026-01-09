@@ -29,7 +29,7 @@ public class PartidoService {
 
     @Transactional
     public Partido crearPartido(Long torneoId, Long localId, Long visitanteId, Date fecha, int golesLocal,
-                                int golesVisitante, Long cargadoPorId, String visitanteNombreOptional) {
+                                int golesVisitante, Long cargadoPorId, String visitanteNombreOptional, String instancia) {
         if (golesLocal < 0 || golesVisitante < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los goles no pueden ser negativos");
         }
@@ -63,6 +63,7 @@ public class PartidoService {
                 .equipoLocal(local)
                 .equipoVisitante(visitante)
                 .fecha(fecha.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate())
+                .instancia(instancia)
                 .golesLocal(golesLocal)
                 .golesVisitante(golesVisitante)
                 .cargadoPor(cargadoPor)

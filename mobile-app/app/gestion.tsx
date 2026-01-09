@@ -129,6 +129,7 @@ export default function Gestion() {
       const params = new URLSearchParams({
         torneoId: String(torneoSeleccionado.id),
         localId: equipoLocalId,
+        instancia, // incluir instancia
         golesLocal,
         golesVisitante,
         cargadoPorId: String(usuarioId)
@@ -239,6 +240,9 @@ export default function Gestion() {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { router.push({ pathname: '/resumen', params: { usuarioId } }); setMostrarMenu(false); }}>
             <Text style={styles.menuItem}>Resumen</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
+            <Text style={styles.menuItem}>Ranking</Text>
           </TouchableOpacity>
         </View>
       )}

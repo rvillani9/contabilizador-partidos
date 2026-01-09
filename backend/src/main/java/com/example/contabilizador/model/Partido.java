@@ -19,6 +19,9 @@ public class Partido {
 
     private LocalDate fecha;
 
+    // Nueva: instancia (Fase, Fecha, Semifinal, etc.)
+    private String instancia;
+
     @ManyToOne(optional = false)
     private Equipo equipoLocal;
     @ManyToOne(optional = true)
