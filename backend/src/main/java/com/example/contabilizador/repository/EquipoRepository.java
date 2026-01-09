@@ -3,6 +3,8 @@ package com.example.contabilizador.repository;
 import com.example.contabilizador.model.Equipo;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface EquipoRepository extends JpaRepository<Equipo, Long> {
-}
+import java.util.List;
 
+public interface EquipoRepository extends JpaRepository<Equipo, Long> {
+    List<Equipo> findByNombreContainingIgnoreCase(String nombre);
+}

@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, Alert, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, Alert, FlatList, TouchableOpacity, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getApiBase } from './lib/apiBase';
 import { useTheme } from './lib/ThemeContext';
 import { getColors } from './lib/colors';
+
+function showAlert(title: string, msg?: string) {
+  if (Platform.OS === 'web') {
+    alert(`${title}${msg ? `: ${msg}` : ''}`);
+  } else {
+    Alert.alert(title, msg);
+  }
+}
 
 interface Equipo {
   id: number;
@@ -48,6 +56,11 @@ export default function Gestion() {
   const [numero, setNumero] = useState('');
   const [showEquiposReclamar, setShowEquiposReclamar] = useState(false);
 
+  // Resultados de búsqueda en tiempo real
+  const [resultadosLocal, setResultadosLocal] = useState<Equipo[]>([]);
+  const [resultadosVisitante, setResultadosVisitante] = useState<Equipo[]>([]);
+  const [creandoLocal, setCreandoLocal] = useState(false);
+
   useEffect(() => {
     cargarTorneos();
     cargarEquipos();
@@ -75,7 +88,7 @@ export default function Gestion() {
 
   async function crearTorneo() {
     if (!nombreTorneo.trim()) {
-      Alert.alert('Error', 'Ingresa el nombre del torneo');
+      showAlert('Error', 'Ingresa el nombre del torneo');
       return;
     }
     try {
@@ -85,41 +98,41 @@ export default function Gestion() {
         body: JSON.stringify({ nombre: nombreTorneo })
       });
       const data = await response.json();
-      Alert.alert('Éxito', `Torneo creado con ID ${data.id}`);
+      showAlert('Éxito', `Torneo creado con ID ${data.id}`);
       setNombreTorneo('');
       await cargarTorneos();
     } catch (e) {
-      Alert.alert('Error', String(e));
+      showAlert('Error', String(e));
     }
   }
 
   async function crearPartido() {
     if (!torneoSeleccionado) {
-      Alert.alert('Error', 'Selecciona un torneo');
+      showAlert('Error', 'Selecciona un torneo');
       return;
     }
     if (!instancia.trim()) {
-      Alert.alert('Error', 'Ingresa la instancia (ej: Fecha 1, Final)');
+      showAlert('Error', 'Ingresa la instancia (ej: Fecha 1, Final)');
       return;
     }
     if (!equipoLocalId || !equipoVisitanteId) {
-      Alert.alert('Error', 'Selecciona ambos equipos');
+      showAlert('Error', 'Selecciona ambos equipos');
       return;
     }
     if (equipoLocalId === equipoVisitanteId) {
-      Alert.alert('Error', 'Los equipos deben ser diferentes');
+      showAlert('Error', 'Los equipos deben ser diferentes');
       return;
     }
 
     try {
-      const url = `${base}/partidos?torneoId=${torneoSeleccionado.id}&localId=${equipoLocalId}&visitanteId=${equipoVisitanteId}&instancia=${encodeURIComponent(instancia)}&golesLocal=${golesLocal}&golesVisitante=${golesVisitante}&cargadoPorId=${usuarioId}`;
-      console.log('URL Crear Partido:', url);
+      const url = `${base}/partidos?torneoId=${torneoSeleccionado.id}&localId=${equipoLocalId}&visitanteId=${equipoVisitanteId}&golesLocal=${golesLocal}&golesVisitante=${golesVisitante}&cargadoPorId=${usuarioId}`;
       const response = await fetch(url, { method: 'POST' });
+      const text = await response.text();
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(text || `HTTP ${response.status}`);
       }
-      const data = await response.json();
-      Alert.alert('Éxito', `Partido creado con ID ${data.id}`);
+      const data = text ? JSON.parse(text) : {};
+      showAlert('Éxito', `Partido creado con ID ${data.id}`);
       setPartidoId(String(data.id));
       // Limpiar
       setInstancia('');
@@ -129,27 +142,31 @@ export default function Gestion() {
       setEquipoVisitanteId('');
       setGolesLocal('0');
       setGolesVisitante('0');
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error crear partido:', e);
-      Alert.alert('Error', String(e));
+      showAlert('Error', e.message || String(e));
     }
   }
 
   async function reclamarGol() {
     if (!partidoId || !equipoReclamerId) {
-      Alert.alert('Error', 'Completa Partido ID y selecciona un equipo');
+      showAlert('Error', 'Completa Partido ID y selecciona un equipo');
       return;
     }
     try {
-      const url = `${base}/partidos/${partidoId}/reclamar-gol?equipoId=${equipoReclamerId}&numero=${numero}`;
-      await fetch(url, { method: 'POST' });
-      Alert.alert('Éxito', 'Gol reclamado');
+      const url = `${base}/partidos/${partidoId}/reclamar-gol?usuarioId=${usuarioId}&equipoId=${equipoReclamerId}&numero=${numero}`;
+      const response = await fetch(url, { method: 'POST' });
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+      showAlert('Éxito', 'Gol reclamado');
       setPartidoId('');
       setEquipoReclamarNombre('');
       setEquipoReclamerId('');
       setNumero('');
-    } catch (e) {
-      Alert.alert('Error', String(e));
+    } catch (e: any) {
+      showAlert('Error', e.message || String(e));
     }
   }
 
@@ -161,6 +178,17 @@ export default function Gestion() {
     } catch (e) {
       return [];
     }
+  }
+
+  async function crearEquipo(nombre: string): Promise<Equipo> {
+    const resp = await fetch(`${base}/equipos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre })
+    });
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+    return text ? JSON.parse(text) : {};
   }
 
   return (
@@ -248,58 +276,101 @@ export default function Gestion() {
             if (text.length >= 2) {
               const equipos = await buscarEquipos(text);
               if (equipos.length > 0) {
+                setResultadosLocal(equipos);
                 setShowEquiposLocal(true);
+              } else {
+                setResultadosLocal([]);
+                setShowEquiposLocal(true); // mostramos opción de crear
               }
+            } else {
+              setResultadosLocal([]);
+              setShowEquiposLocal(false);
             }
+            // Al cambiar el texto, limpiamos el ID seleccionado si el nombre ya no coincide
+            setEquipoLocalId('');
           }}
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
         />
         {showEquiposLocal && equipoLocalNombre.length >= 2 && (
           <View style={[styles.dropdown, { backgroundColor: colors.bgSecondary }]}>
-            {equiposDisponibles
-              .filter(e => e.nombre.toLowerCase().includes(equipoLocalNombre.toLowerCase()))
-              .map(e => (
-                <TouchableOpacity
-                  key={e.id}
-                  style={styles.dropdownItem}
-                  onPress={() => { setEquipoLocalNombre(e.nombre); setEquipoLocalId(String(e.id)); setShowEquiposLocal(false); }}
-                >
-                  <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
-                </TouchableOpacity>
-              ))}
+            {resultadosLocal.map(e => (
+              <TouchableOpacity
+                key={e.id}
+                style={styles.dropdownItem}
+                onPress={() => { setEquipoLocalNombre(e.nombre); setEquipoLocalId(String(e.id)); setShowEquiposLocal(false); }}
+              >
+                <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
+              </TouchableOpacity>
+            ))}
+            {/* Opción para crear si no hay resultados exactos */}
+            <TouchableOpacity
+              disabled={creandoLocal}
+              style={[styles.dropdownItem, { opacity: creandoLocal ? 0.6 : 1 }]}
+              onPress={async () => {
+                try {
+                  setCreandoLocal(true);
+                  const nuevo = await crearEquipo(equipoLocalNombre.trim());
+                  setEquipoLocalNombre(nuevo.nombre);
+                  setEquipoLocalId(String(nuevo.id));
+                  setShowEquiposLocal(false);
+                } catch (e: any) {
+                  showAlert('Error', e.message || String(e));
+                } finally {
+                  setCreandoLocal(false);
+                }
+              }}
+            >
+              {creandoLocal ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                  <Text style={{ color: colors.textPrimary, marginLeft: 8 }}>Creando…</Text>
+                </View>
+              ) : (
+                <Text style={{ color: colors.textPrimary }}>
+                  Crear "{equipoLocalNombre.trim()}" como equipo local
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
         )}
 
+        {/* Equipo Visitante: solo selección de existentes, sin crear */}
         <Text style={[styles.label, { color: colors.textSecondary }]}>Equipo Visitante</Text>
         <TextInput
-          placeholder="Busca o crea equipo"
+          placeholder="Busca equipo existente"
           value={equipoVisitanteNombre}
           onChangeText={async (text) => {
             setEquipoVisitanteNombre(text);
             if (text.length >= 2) {
               const equipos = await buscarEquipos(text);
               if (equipos.length > 0) {
+                setResultadosVisitante(equipos);
                 setShowEquiposVisitante(true);
+              } else {
+                setResultadosVisitante([]);
+                setShowEquiposVisitante(false);
               }
+            } else {
+              setResultadosVisitante([]);
+              setShowEquiposVisitante(false);
             }
+            setEquipoVisitanteId('');
           }}
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
         />
         {showEquiposVisitante && equipoVisitanteNombre.length >= 2 && (
           <View style={[styles.dropdown, { backgroundColor: colors.bgSecondary }]}>
-            {equiposDisponibles
-              .filter(e => e.nombre.toLowerCase().includes(equipoVisitanteNombre.toLowerCase()))
-              .map(e => (
-                <TouchableOpacity
-                  key={e.id}
-                  style={styles.dropdownItem}
-                  onPress={() => { setEquipoVisitanteNombre(e.nombre); setEquipoVisitanteId(String(e.id)); setShowEquiposVisitante(false); }}
-                >
-                  <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
-                </TouchableOpacity>
-              ))}
+            {resultadosVisitante.map(e => (
+              <TouchableOpacity
+                key={e.id}
+                style={styles.dropdownItem}
+                onPress={() => { setEquipoVisitanteNombre(e.nombre); setEquipoVisitanteId(String(e.id)); setShowEquiposVisitante(false); }}
+              >
+                <Text style={{ color: colors.textPrimary }}>{e.nombre}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -319,7 +390,7 @@ export default function Gestion() {
           style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.textPrimary }]}
           placeholderTextColor={colors.inputPlaceholder}
         />
-        <Button title="Crear Partido" onPress={crearPartido} color={colors.buttonBg} />
+        <Button title="Crear Partido" onPress={crearPartido} color={colors.buttonBg} disabled={!equipoLocalId || !equipoVisitanteId || !torneoSeleccionado} />
 
         <Text style={[styles.sectionTitle, { color: colors.headerBg }]}>Reclamar Gol</Text>
         <TextInput
@@ -391,4 +462,3 @@ const styles = StyleSheet.create({
   dropdown: { borderWidth: 2, borderRadius: 8, marginBottom: 12, maxHeight: 150 },
   dropdownItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#ddd' },
 });
-

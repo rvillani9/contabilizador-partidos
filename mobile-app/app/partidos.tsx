@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Text, View, FlatList, StyleSheet, Button, Alert, TouchableOpacity, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from './lib/ThemeContext'; // Ajusté la ruta a ../
 import { getColors } from './lib/colors';
 import { getApiBase } from './lib/apiBase';
 
+function showAlert(title: string, msg?: string) {
+    if (Platform.OS === 'web') {
+        alert(`${title}${msg ? `: ${msg}` : ''}`);
+    } else {
+        Alert.alert(title, msg);
+    }
+}
+
 export default function Partidos() {
     const router = useRouter();
+    const { usuarioId } = useLocalSearchParams<{ usuarioId?: string }>();
     const { isDarkMode, toggleDarkMode } = useTheme();
     const colors = getColors(isDarkMode);
     const base = getApiBase();
@@ -20,43 +29,58 @@ export default function Partidos() {
 
     function cargar() {
         fetch(`${base}/partidos`)
-            .then(r => r.json())
+            .then(async r => {
+                const text = await r.text();
+                if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
+                return text ? JSON.parse(text) : [];
+            })
             .then(setPartidos)
-            .catch(e => console.error("Error al cargar partidos:", e));
+            .catch(e => showAlert('Error', e.message || String(e)));
     }
 
     function reclamarGol(partidoId: number) {
-        // Alert.prompt NO funciona en Android ni Web.
-        // Usamos una solución compatible:
+        const necesitaUsuario = !usuarioId;
         if (Platform.OS === 'ios') {
-            Alert.prompt('Reclamar gol', 'Ingresa: usuarioId,equipoId,numero', [
+            Alert.prompt('Reclamar gol', `Ingresa: ${necesitaUsuario ? 'usuarioId,' : ''}equipoId,numero`, [
                 { text: 'Cancelar', style: 'cancel' },
-                { text: 'OK', onPress: (value) => procesarReclamo(partidoId, String(value)) }
+                { text: 'OK', onPress: (value) => procesarReclamo(partidoId, String(value), necesitaUsuario) }
             ]);
         } else {
-            // Para Web y Android usamos un prompt simple del navegador o pedimos los datos por consola/otro medio
-            const res = prompt("Ingresa: usuarioId,equipoId,numero (separados por coma)");
-            if (res) procesarReclamo(partidoId, res);
+            const res = prompt(`Ingresa: ${necesitaUsuario ? 'usuarioId,' : ''}equipoId,numero (separados por coma)`);
+            if (res) procesarReclamo(partidoId, res, necesitaUsuario);
         }
     }
 
-    function procesarReclamo(partidoId: number, value: string) {
-        const [usuarioId, equipoId, numero] = value.split(',').map(s => s.trim());
+    function procesarReclamo(partidoId: number, value: string, necesitaUsuario: boolean) {
+        const partes = value.split(',').map(s => s.trim());
+        let uId = usuarioId as string | undefined;
+        let equipoId: string | undefined;
+        let numero: string | undefined;
 
-        if (!usuarioId || !equipoId || !numero) {
-            Alert.alert("Error", "Formato incorrecto. Debe ser: id_usuario, id_equipo, numero_gol");
+        if (necesitaUsuario) {
+            [uId, equipoId, numero] = partes;
+        } else {
+            [equipoId, numero] = partes;
+        }
+
+        if (!uId) {
+            showAlert("Error", "Falta usuarioId");
+            return;
+        }
+        if (!equipoId) {
+            showAlert("Error", "Falta equipoId");
             return;
         }
 
-        fetch(`${base}/partidos/${partidoId}/reclamar-gol?usuarioId=${usuarioId}&equipoId=${equipoId}&numero=${numero}`, {
-            method: 'POST'
-        })
+        const url = `${base}/partidos/${partidoId}/reclamar-gol?usuarioId=${uId}&equipoId=${equipoId}${numero ? `&numero=${numero}` : ''}`;
+        fetch(url, { method: 'POST' })
             .then(async (r) => {
-                if (!r.ok) throw new Error("Error en el servidor");
-                Alert.alert('Éxito', 'Gol reclamado correctamente');
+                const text = await r.text();
+                if (!r.ok) throw new Error(text || `HTTP ${r.status}`);
+                showAlert('Éxito', 'Gol reclamado correctamente');
                 cargar();
             })
-            .catch(e => Alert.alert('Error', "No se pudo reclamar el gol"));
+            .catch(e => showAlert('Error', e.message || 'No se pudo reclamar el gol'));
     }
 
     return (

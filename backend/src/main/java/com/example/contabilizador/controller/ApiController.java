@@ -48,6 +48,8 @@ public class ApiController {
     public Equipo crearEquipo(@RequestBody Equipo e) { return equipoRepository.save(e); }
     @GetMapping("/equipos")
     public List<Equipo> listarEquipos() { return equipoRepository.findAll(); }
+    @GetMapping("/equipos/buscar")
+    public List<Equipo> buscarEquipos(@RequestParam String nombre) { return equipoRepository.findByNombreContainingIgnoreCase(nombre); }
 
     @PostMapping("/torneos")
     public Torneo crearTorneo(@RequestBody Torneo t) { return torneoRepository.save(t); }
@@ -59,10 +61,10 @@ public class ApiController {
     public Partido crearPartido(@RequestParam Long torneoId,
                                 @RequestParam Long localId,
                                 @RequestParam Long visitanteId,
-                                //@RequestParam Long cargadoPorId,
                                 @RequestParam int golesLocal,
-                                @RequestParam int golesVisitante) {
-        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante);
+                                @RequestParam int golesVisitante,
+                                @RequestParam Long cargadoPorId) {
+        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante, cargadoPorId);
     }
 
     @GetMapping("/partidos")
