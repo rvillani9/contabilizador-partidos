@@ -29,21 +29,32 @@ public class PartidoService {
 
     @Transactional
     public Partido crearPartido(Long torneoId, Long localId, Long visitanteId, Date fecha, int golesLocal,
-                                int golesVisitante, Long cargadoPorId) {
-        // Validaciones básicas
-        if (localId.equals(visitanteId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo local y visitante no pueden ser el mismo");
-        }
+                                int golesVisitante, Long cargadoPorId, String visitanteNombreOptional, String instancia) {
         if (golesLocal < 0 || golesVisitante < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los goles no pueden ser negativos");
+        }
+        if (visitanteId != null && localId.equals(visitanteId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo local y visitante no pueden ser el mismo");
         }
 
         Torneo torneo = torneoRepository.findById(torneoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
         Equipo local = equipoRepository.findById(localId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo local no encontrado"));
-        Equipo visitante = equipoRepository.findById(visitanteId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo visitante no encontrado"));
+
+        Equipo visitante = null;
+        if (visitanteId != null) {
+            visitante = equipoRepository.findById(visitanteId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo visitante no encontrado"));
+        } else if (visitanteNombreOptional != null && !visitanteNombreOptional.isBlank()) {
+            // Intentar reutilizar si existe por nombre (case-insensitive), si no, crear
+            visitante = equipoRepository.findByNombreIgnoreCase(visitanteNombreOptional.trim())
+                    .orElseGet(() -> equipoRepository.save(Equipo.builder().nombre(visitanteNombreOptional.trim()).build()));
+            if (visitante.getId().equals(local.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo local y visitante no pueden ser el mismo");
+            }
+        }
+
         Usuario cargadoPor = usuarioRepository.findById(cargadoPorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario (cargadoPor) no encontrado"));
 
@@ -52,6 +63,7 @@ public class PartidoService {
                 .equipoLocal(local)
                 .equipoVisitante(visitante)
                 .fecha(fecha.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate())
+                .instancia(instancia)
                 .golesLocal(golesLocal)
                 .golesVisitante(golesVisitante)
                 .cargadoPor(cargadoPor)
@@ -90,12 +102,29 @@ public class PartidoService {
             }
         }
 
-        Gol gol = Gol.builder().partido(partido).usuario(usuario).equipo(equipo).numero(numeroOptional).build();
-        try {
-            return golRepository.save(gol);
-        } catch (Exception e) {
-            // Capturamos errores de constraints y devolvemos un mensaje claro
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo registrar el gol: " + e.getMessage());
+        return golRepository.save(Gol.builder().partido(partido).usuario(usuario).equipo(equipo).numero(numeroOptional).build());
+    }
+
+    @Transactional
+    public List<Gol> reclamarGolMultiple(Long partidoId, Long usuarioId, Long equipoId, Integer cantidad) {
+        if (cantidad == null || cantidad <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cantidad debe ser mayor a cero");
         }
+        Partido partido = partidoRepository.findById(partidoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Partido no encontrado"));
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+        Equipo equipo = equipoRepository.findById(equipoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo no encontrado"));
+        if (equipo.getId() == null || (!equipo.getId().equals(partido.getEquipoLocal().getId()) &&
+                (partido.getEquipoVisitante() == null || !equipo.getId().equals(partido.getEquipoVisitante().getId())))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo no pertenece al partido");
+        }
+        List<Gol> creado = new ArrayList<>();
+        for (int i = 0; i < cantidad; i++) {
+            Gol g = Gol.builder().partido(partido).usuario(usuario).equipo(equipo).numero(null).build();
+            creado.add(golRepository.save(g));
+        }
+        return creado;
     }
 }

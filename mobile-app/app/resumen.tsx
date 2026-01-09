@@ -66,6 +66,9 @@ export default function Resumen() {
           <TouchableOpacity style={styles.menuItem} onPress={() => { router.push({ pathname: '/gestion', params: { usuarioId } }); setMostrarMenu(false); }}>
             <Text style={{ color: colors.textPrimary }}>Gestión</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
+            <Text style={{ color: colors.textPrimary }}>Ranking</Text>
+          </TouchableOpacity>
         </View>
       )}
 

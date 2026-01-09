@@ -42,6 +42,9 @@ export default function Equipos() {
           <TouchableOpacity onPress={() => { router.push('/partidos'); setMostrarMenu(false); }}>
             <Text style={styles.menuItem}>Partidos</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
+            <Text style={styles.menuItem}>Ranking</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -71,4 +74,3 @@ const styles = StyleSheet.create({
   card: { marginBottom: 8, padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#eee' },
   cardTitle: { fontSize: 16, fontWeight: 'bold' }
 });
-
