@@ -1,20 +1,34 @@
-# Etapa 1: Construir la aplicación (Maven con Temurin Java 21)
-FROM maven:3.9.6-eclipse-temurin-21 AS build
-WORKDIR /app
+# ETAPA 1: Construir el Frontend (Expo Web)
+FROM node:20 AS frontend-build
+WORKDIR /app/frontend
 
-# Copiamos los archivos necesarios
-COPY pom.xml .
-COPY src ./src
+# Copiamos archivos de Node y descargamos dependencias
+COPY mobile-app/package*.json ./
+RUN npm install
 
-# Compilamos el proyecto
+# Copiamos el resto y exportamos la web
+COPY mobile-app/ ./
+RUN npx expo export --platform web
+
+# ETAPA 2: Construir el Backend (Java)
+FROM maven:3.9.6-eclipse-temurin-21 AS backend-build
+WORKDIR /app/backend
+
+# Copiamos el pom y el código
+COPY backend/pom.xml .
+COPY backend/src ./src
+
+# TRUCO: Copiamos la web de la etapa 1 a la carpeta estática de Java
+COPY --from=frontend-build /app/frontend/dist ./src/main/resources/static
+
+# Compilamos el JAR con la web adentro
 RUN mvn clean package -DskipTests
 
-# Etapa 2: Ejecutar la aplicación
+# ETAPA 3: Ejecución final
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
+COPY --from=backend-build /app/backend/target/app.jar app.jar
 
-# Cambiamos el *.jar por app.jar (que definimos en el pom.xml)
-COPY --from=build /app/target/app.jar app.jar
-
+# Límites de memoria para que Render no lo mate
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx400m", "-Xms400m", "-jar", "app.jar"]
