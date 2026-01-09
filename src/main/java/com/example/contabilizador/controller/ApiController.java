@@ -59,17 +59,17 @@ public class ApiController {
     public Partido crearPartido(@RequestParam Long torneoId,
                                 @RequestParam Long localId,
                                 @RequestParam Long visitanteId,
-                                @RequestParam Long cargadoPorId,
+                                //@RequestParam Long cargadoPorId,
                                 @RequestParam int golesLocal,
                                 @RequestParam int golesVisitante) {
-        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante, cargadoPorId);
+        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante);
     }
 
     @GetMapping("/partidos")
     public List<Partido> listarPartidos() { return partidoRepository.findAll(); }
 
     @PostMapping("/partidos/{partidoId}/reclamar-gol")
-    public Gol reclamarGol(@PathVariable Long partidoId,
+    public Gol reclamarGol(@PathVariable("partidoId") Long partidoId,
                            @RequestParam Long usuarioId,
                            @RequestParam Long equipoId,
                            @RequestParam(required = false) Integer numero) {
@@ -78,13 +78,13 @@ public class ApiController {
 
     // Pertenencias y resumen
     @PostMapping("/usuarios/{usuarioId}/pertenencias")
-    public UsuarioEquipo asignar(@PathVariable Long usuarioId, @RequestParam Long equipoId,
+    public UsuarioEquipo asignar(@PathVariable("usuarioId") Long usuarioId, @RequestParam Long equipoId,
                                  @RequestParam String desde) {
         return usuarioEquipoService.asignarEquipo(usuarioId, equipoId, LocalDate.parse(desde));
     }
     @GetMapping("/usuarios/{usuarioId}/pertenencias")
-    public List<UsuarioEquipo> historial(@PathVariable Long usuarioId) { return usuarioEquipoService.historial(usuarioId); }
+    public List<UsuarioEquipo> historial(@PathVariable("usuarioId") Long usuarioId) { return usuarioEquipoService.historial(usuarioId); }
 
     @GetMapping("/usuarios/{usuarioId}/resumen")
-    public Map<String, Object> resumen(@PathVariable Long usuarioId) { return resumenService.resumenUsuario(usuarioId); }
+    public Map<String, Object> resumen(@PathVariable("usuarioId") Long usuarioId) { return resumenService.resumenUsuario(usuarioId); }
 }

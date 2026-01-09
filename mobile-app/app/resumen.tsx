@@ -42,7 +42,7 @@ export default function Resumen() {
         />
         <Text style={styles.total}>Total de partidos: {resumen?.totalPartidos ?? 0}</Text>
         <View style={{ marginTop: 16 }}>
-          <Button title="Ir a Gestión" onPress={()=> router.push({ pathname: '/(main)/gestion', params: { usuarioId: String(usuarioId) } })} />
+          <Button title="Ir a Gestión" onPress={()=> router.push({ pathname: '/gestion', params: { usuarioId: String(usuarioId) } })} />
         </View>
       </View>
     </View>
