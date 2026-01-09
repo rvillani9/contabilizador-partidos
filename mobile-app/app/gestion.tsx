@@ -133,7 +133,11 @@ export default function Gestion() {
         golesVisitante,
         cargadoPorId: String(usuarioId)
       });
-      if (equipoVisitanteId) params.append('visitanteId', equipoVisitanteId);
+      if (equipoVisitanteId) {
+        params.append('visitanteId', equipoVisitanteId);
+      } else if (equipoVisitanteNombre.trim()) {
+        params.append('visitanteNombre', equipoVisitanteNombre.trim());
+      }
       const url = `${base}/partidos?${params.toString()}`;
       const response = await fetch(url, { method: 'POST' });
       const text = await response.text();

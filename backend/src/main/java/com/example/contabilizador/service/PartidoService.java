@@ -29,7 +29,7 @@ public class PartidoService {
 
     @Transactional
     public Partido crearPartido(Long torneoId, Long localId, Long visitanteId, Date fecha, int golesLocal,
-                                int golesVisitante, Long cargadoPorId) {
+                                int golesVisitante, Long cargadoPorId, String visitanteNombreOptional) {
         if (golesLocal < 0 || golesVisitante < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los goles no pueden ser negativos");
         }
@@ -41,11 +41,20 @@ public class PartidoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
         Equipo local = equipoRepository.findById(localId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo local no encontrado"));
+
         Equipo visitante = null;
         if (visitanteId != null) {
             visitante = equipoRepository.findById(visitanteId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipo visitante no encontrado"));
+        } else if (visitanteNombreOptional != null && !visitanteNombreOptional.isBlank()) {
+            // Intentar reutilizar si existe por nombre (case-insensitive), si no, crear
+            visitante = equipoRepository.findByNombreIgnoreCase(visitanteNombreOptional.trim())
+                    .orElseGet(() -> equipoRepository.save(Equipo.builder().nombre(visitanteNombreOptional.trim()).build()));
+            if (visitante.getId().equals(local.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El equipo local y visitante no pueden ser el mismo");
+            }
         }
+
         Usuario cargadoPor = usuarioRepository.findById(cargadoPorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario (cargadoPor) no encontrado"));
 

@@ -2,6 +2,7 @@ package com.example.contabilizador.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ public class Partido {
     private Usuario cargadoPor;
 
     // Goles reclamados por usuarios
+    @JsonIgnore
     @OneToMany(mappedBy = "partido", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Gol> golesReclamados = new HashSet<>();
 }

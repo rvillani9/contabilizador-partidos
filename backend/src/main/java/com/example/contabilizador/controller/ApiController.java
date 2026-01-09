@@ -61,10 +61,11 @@ public class ApiController {
     public Partido crearPartido(@RequestParam Long torneoId,
                                 @RequestParam Long localId,
                                 @RequestParam(required = false) Long visitanteId,
+                                @RequestParam(required = false) String visitanteNombre,
                                 @RequestParam int golesLocal,
                                 @RequestParam int golesVisitante,
                                 @RequestParam Long cargadoPorId) {
-        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante, cargadoPorId);
+        return partidoService.crearPartido(torneoId, localId, visitanteId, new Date(), golesLocal, golesVisitante, cargadoPorId, visitanteNombre);
     }
 
     @GetMapping("/partidos")
