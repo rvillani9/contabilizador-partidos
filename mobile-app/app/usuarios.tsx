@@ -43,6 +43,12 @@ export default function Usuarios() {
           <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/partidos'); setMostrarMenu(false); }}>
             <Text style={{ color: colors.textPrimary }}>Partidos</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
+            <Text style={{ color: colors.textPrimary }}>Ranking</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/login'); setMostrarMenu(false); }}>
+            <Text style={{ color: colors.textPrimary }}>Acceso</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -96,4 +102,3 @@ const styles = StyleSheet.create({
   cardName: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
   cardEmail: { fontSize: 13 }
 });
-

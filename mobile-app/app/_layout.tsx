@@ -13,6 +13,7 @@ export default function Layout() {
         <Stack.Screen name="usuarios" />
         <Stack.Screen name="ranking" />
         <Stack.Screen name="(main)" />
+        <Stack.Screen name="login" />
       </Stack>
     </ThemeProvider>
   );
