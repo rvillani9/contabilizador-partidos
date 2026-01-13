@@ -191,9 +191,7 @@ export default function Partidos() {
             {/* MENU DROPDOWN */}
             {mostrarMenu && (
                 <View style={[styles.menu, { backgroundColor: colors.headerBgLight }]}>
-                    <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/'); setMostrarMenu(false); }}>
-                        <Text style={{ color: '#fff' }}>Usuarios</Text>
-                    </TouchableOpacity>
+                    {/* Eliminado Usuarios */}
                     <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/equipos'); setMostrarMenu(false); }}>
                         <Text style={{ color: '#fff' }}>Equipos</Text>
                     </TouchableOpacity>
@@ -202,6 +200,9 @@ export default function Partidos() {
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
                         <Text style={{ color: '#fff' }}>Ranking</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/login'); setMostrarMenu(false); }}>
+                        <Text style={{ color: '#fff' }}>Acceso</Text>
                     </TouchableOpacity>
                 </View>
             )}

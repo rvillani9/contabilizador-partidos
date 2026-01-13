@@ -47,14 +47,15 @@ export default function Ranking() {
 
       {mostrarMenu && (
         <View style={[styles.menu, { backgroundColor: colors.headerBgLight }]}>
-          <TouchableOpacity onPress={() => { router.push('/'); setMostrarMenu(false); }}>
-            <Text style={styles.menuItem}>Usuarios</Text>
-          </TouchableOpacity>
+          {/* Eliminado Usuarios */}
           <TouchableOpacity onPress={() => { router.push('/equipos'); setMostrarMenu(false); }}>
             <Text style={styles.menuItem}>Equipos</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { router.push('/partidos'); setMostrarMenu(false); }}>
             <Text style={styles.menuItem}>Partidos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { router.push('/login'); setMostrarMenu(false); }}>
+            <Text style={styles.menuItem}>Acceso</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -101,4 +102,3 @@ const styles = StyleSheet.create({
   name: { flex: 1 },
   stat: { minWidth: 100, textAlign: 'right' },
 });
-

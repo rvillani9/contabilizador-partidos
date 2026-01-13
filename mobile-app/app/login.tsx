@@ -84,9 +84,6 @@ export default function Login() {
           <TouchableOpacity onPress={() => setMostrarMenu(false)}>
             <Text style={styles.menuItem}>Acceso</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/'); setMostrarMenu(false); }}>
-            <Text style={styles.menuItem}>Usuarios</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={() => { router.push('/equipos'); setMostrarMenu(false); }}>
             <Text style={styles.menuItem}>Equipos</Text>
           </TouchableOpacity>
@@ -148,4 +145,3 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginTop: 10, marginBottom: 10 },
   input: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 10 }
 });
-

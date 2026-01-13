@@ -10,7 +10,6 @@ export default function Layout() {
         <Stack.Screen name="gestion" />
         <Stack.Screen name="equipos" />
         <Stack.Screen name="partidos" />
-        <Stack.Screen name="usuarios" />
         <Stack.Screen name="ranking" />
         <Stack.Screen name="(main)" />
         <Stack.Screen name="login" />

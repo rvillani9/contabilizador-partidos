@@ -54,9 +54,6 @@ export default function Resumen() {
 
       {mostrarMenu && (
         <View style={[styles.menu, { backgroundColor: colors.bgSecondary }]}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/'); setMostrarMenu(false); }}>
-            <Text style={{ color: colors.textPrimary }}>Usuarios</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/equipos'); setMostrarMenu(false); }}>
             <Text style={{ color: colors.textPrimary }}>Equipos</Text>
           </TouchableOpacity>
@@ -68,6 +65,9 @@ export default function Resumen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/ranking'); setMostrarMenu(false); }}>
             <Text style={{ color: colors.textPrimary }}>Ranking</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => { router.push('/login'); setMostrarMenu(false); }}>
+            <Text style={{ color: colors.textPrimary }}>Acceso</Text>
           </TouchableOpacity>
         </View>
       )}

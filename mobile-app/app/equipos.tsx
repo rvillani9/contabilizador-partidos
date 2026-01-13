@@ -33,9 +33,6 @@ export default function Equipos() {
 
       {mostrarMenu && (
         <View style={[styles.menu, { backgroundColor: colors.headerBgLight }]}>
-          <TouchableOpacity onPress={() => { router.push('/'); setMostrarMenu(false); }}>
-            <Text style={styles.menuItem}>Usuarios</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={() => setMostrarMenu(false)}>
             <Text style={styles.menuItem}>Equipos</Text>
           </TouchableOpacity>
